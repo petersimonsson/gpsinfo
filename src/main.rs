@@ -50,7 +50,9 @@ async fn main() -> Result<()> {
 
             if lines.len() == 5 {
                 for line in &lines {
-                    println!("{}", &line[2..line.len()]);
+                    if let Some((_, line)) = line.split_once(' ') {
+                        println!("{}", line);
+                    }
                 }
             }
 
