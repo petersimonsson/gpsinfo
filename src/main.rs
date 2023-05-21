@@ -1,19 +1,18 @@
 mod args;
+mod gps;
 
 use anyhow::Result;
 use clap::Parser;
 use crossterm::{
     cursor::{Hide, MoveTo, Show},
-    execute, queue,
+    execute,
     style::Print,
     terminal::{Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use futures::stream::StreamExt;
-use std::io::{stdout, Write};
-use tokio_serial::SerialPortBuilderExt;
-use tokio_util::codec::{Decoder, LinesCodec};
+use std::io::stdout;
 
 use crate::args::Args;
+use crate::gps::{Gps, Message};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -24,52 +23,72 @@ async fn main() -> Result<()> {
 
     execute!(stdout, MoveTo(0, 0), Print("GPSInfo for Cartain GPSDXO"))?;
 
-    let mut port = tokio_serial::new(args.device(), 115200).open_native_async()?;
-    port.set_exclusive(false)?;
+    execute!(stdout, MoveTo(0, 2), Print("Current:"))?;
+    execute!(stdout, MoveTo(0, 3), Print("Deviation current:"))?;
+    execute!(stdout, MoveTo(0, 4), Print("Deviation accumulated:"))?;
+    execute!(stdout, MoveTo(0, 5), Print("DAC1 value:"))?;
+    execute!(stdout, MoveTo(0, 6), Print("DAC2 value:"))?;
+    execute!(stdout, MoveTo(0, 7), Print("Deviation:"))?;
 
-    let codec = LinesCodec::new();
-    let mut reader = codec.framed(port);
+    let gps = Gps::new(args.device().to_string());
 
     let mut stopped = false;
-    let mut lines: Vec<String> = Vec::new();
-    let mut last_line = false;
 
     while !stopped {
-        tokio::select! {
-            line = reader.next() => {
-                if let Some(line) = line {
-                    let line = line?;
-
-                    if line.starts_with("*") {
-                        last_line = true;
-                    }
-
-                    lines.push(line);
-                } else {
+        if let Ok(message) = gps.rx.try_recv() {
+            match message {
+                Message::Curr(data) => {
+                    execute!(
+                        stdout,
+                        MoveTo(23, 2),
+                        Clear(ClearType::UntilNewLine),
+                        Print(format!("{}", data))
+                    )?;
+                }
+                Message::DevCurr(data) => {
+                    execute!(
+                        stdout,
+                        MoveTo(23, 3),
+                        Clear(ClearType::UntilNewLine),
+                        Print(format!("{} Hz", data))
+                    )?;
+                }
+                Message::DevAccum(data) => {
+                    execute!(
+                        stdout,
+                        MoveTo(23, 4),
+                        Clear(ClearType::UntilNewLine),
+                        Print(format!("{} Hz", data))
+                    )?;
+                }
+                Message::DAC1(data) => {
+                    execute!(
+                        stdout,
+                        MoveTo(23, 5),
+                        Clear(ClearType::UntilNewLine),
+                        Print(format!("{}", data))
+                    )?;
+                }
+                Message::DAC2(data) => {
+                    execute!(
+                        stdout,
+                        MoveTo(23, 6),
+                        Clear(ClearType::UntilNewLine),
+                        Print(format!("{}", data))
+                    )?;
+                }
+                Message::Deviation(data) => {
+                    execute!(
+                        stdout,
+                        MoveTo(23, 7),
+                        Clear(ClearType::UntilNewLine),
+                        Print(format!("{} ppb", data))
+                    )?;
+                }
+                Message::Error => {
                     stopped = true;
                 }
             }
-        }
-
-        if last_line {
-            last_line = false;
-
-            if lines.len() == 5 {
-                queue!(stdout, MoveTo(0, 2))?;
-                for line in &lines {
-                    if let Some((_, line)) = line.split_once(' ') {
-                        queue!(
-                            stdout,
-                            Clear(ClearType::CurrentLine),
-                            Print(format!("{}\n", line))
-                        )?;
-                    }
-                }
-
-                stdout.flush()?;
-            }
-
-            lines.clear();
         }
     }
 
