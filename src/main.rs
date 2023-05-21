@@ -3,9 +3,10 @@ mod args;
 use anyhow::Result;
 use clap::Parser;
 use crossterm::{
-    cursor::{Hide, RestorePosition, SavePosition, Show},
+    cursor::{Hide, MoveTo, Show},
     execute, queue,
     style::Print,
+    terminal::{Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use futures::stream::StreamExt;
 use std::io::{stdout, Write};
@@ -19,9 +20,7 @@ async fn main() -> Result<()> {
     let args = Args::parse();
     let mut stdout = stdout();
 
-    execute!(stdout, Hide)?;
-
-    println!("Device: {}", args.device());
+    execute!(stdout, EnterAlternateScreen, Hide, Clear(ClearType::All))?;
 
     let mut port = tokio_serial::new(args.device(), 115200).open_native_async()?;
     port.set_exclusive(false)?;
@@ -54,13 +53,16 @@ async fn main() -> Result<()> {
             last_line = false;
 
             if lines.len() == 5 {
-                queue!(stdout, SavePosition)?;
+                queue!(stdout, MoveTo(0, 2))?;
                 for line in &lines {
                     if let Some((_, line)) = line.split_once(' ') {
-                        queue!(stdout, Print(format!("{}\n", line)))?;
+                        queue!(
+                            stdout,
+                            Clear(ClearType::CurrentLine),
+                            Print(format!("{}\n", line))
+                        )?;
                     }
                 }
-                queue!(stdout, RestorePosition)?;
 
                 stdout.flush()?;
             }
@@ -69,7 +71,7 @@ async fn main() -> Result<()> {
         }
     }
 
-    execute!(stdout, Show)?;
+    execute!(stdout, Show, LeaveAlternateScreen)?;
 
     Ok(())
 }
