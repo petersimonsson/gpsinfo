@@ -50,7 +50,7 @@ async fn main() -> Result<()> {
 
             if lines.len() == 5 {
                 for line in &lines {
-                    println!("{}", &line[..line.len()]);
+                    println!("{}", &line[2..line.len()]);
                 }
             }
 
