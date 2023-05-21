@@ -24,5 +24,39 @@ async fn main() -> Result<()> {
         println!("{}", line);
     }
 
+    let mut stopped = false;
+    let mut lines: Vec<String> = Vec::new();
+    let mut last_line = false;
+
+    while !stopped {
+        tokio::select! {
+            line = reader.next() => {
+                if let Some(line) = line {
+                    let line = line?;
+
+                    if line.starts_with("*") {
+                        last_line = true;
+                    }
+
+                    lines.push(line);
+                } else {
+                    stopped = true;
+                }
+            }
+        }
+
+        if last_line {
+            last_line = false;
+
+            if lines.len() == 5 {
+                for line in &lines {
+                    println!("{}", &line[..line.len()]);
+                }
+            }
+
+            lines.clear();
+        }
+    }
+
     Ok(())
 }
