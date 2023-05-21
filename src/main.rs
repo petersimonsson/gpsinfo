@@ -22,6 +22,8 @@ async fn main() -> Result<()> {
 
     execute!(stdout, EnterAlternateScreen, Hide, Clear(ClearType::All))?;
 
+    execute!(stdout, MoveTo(0, 0), Print("GPSInfo for Cartain GPSDXO"))?;
+
     let mut port = tokio_serial::new(args.device(), 115200).open_native_async()?;
     port.set_exclusive(false)?;
 
