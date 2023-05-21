@@ -19,11 +19,6 @@ async fn main() -> Result<()> {
     let codec = LinesCodec::new();
     let mut reader = codec.framed(port);
 
-    while let Some(line_result) = reader.next().await {
-        let line = line_result?;
-        println!("{}", line);
-    }
-
     let mut stopped = false;
     let mut lines: Vec<String> = Vec::new();
     let mut last_line = false;
