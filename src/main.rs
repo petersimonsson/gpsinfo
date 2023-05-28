@@ -85,7 +85,7 @@ async fn main() -> Result<()> {
                         Print(format!("{} ppb", data))
                     )?;
                 }
-                Message::Error => {
+                Message::SerialError(_) => {
                     stopped = true;
                 }
             }
