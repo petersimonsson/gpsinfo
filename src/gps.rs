@@ -24,10 +24,16 @@ impl Gps {
         let line_tx = tx.clone();
 
         tokio::spawn(async move {
-            let mut port = tokio_serial::new(device, 115200)
-                .open_native_async()
-                .unwrap(); // TODO: Less unwrap!
-            port.set_exclusive(false).unwrap(); // TODO: Less unwrap!
+            let mut port = match tokio_serial::new(device, 115200).open_native_async() {
+                Ok(port) => port,
+                Err(e) => {
+                    line_tx.send(Message::SerialError(e.to_string())).unwrap();
+                    return;
+                }
+            };
+            if let Err(e) = port.set_exclusive(false) {
+                line_tx.send(Message::SerialError(e.to_string())).unwrap();
+            }
 
             let codec = LinesCodec::new();
             let mut reader = codec.framed(port);
@@ -76,7 +82,7 @@ impl Gps {
                             }
                         }
                     }
-                    Some(Err(e)) => line_tx.send(Message::SerialError(e.to_string())).unwrap(), // TODO: Less unwrap!
+                    Some(Err(e)) => line_tx.send(Message::SerialError(e.to_string())).unwrap(),
                     None => {}
                 }
             }
