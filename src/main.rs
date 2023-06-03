@@ -35,10 +35,11 @@ async fn main() -> Result<()> {
     let mut stopped = false;
 
     while !stopped {
-        let message = gps.rx.try_recv()?;
-        match process_message(&message) {
-            Ok(_) => {}
-            Err(_) => stopped = true,
+        if let Ok(message) = gps.rx.try_recv() {
+            match process_message(&message) {
+                Ok(_) => {}
+                Err(_) => stopped = true,
+            }
         }
     }
 
