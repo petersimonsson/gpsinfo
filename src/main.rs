@@ -1,7 +1,7 @@
 mod args;
 mod gps;
 
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use clap::Parser;
 use crossterm::{
     cursor::{Hide, MoveTo, Show},
@@ -35,64 +35,74 @@ async fn main() -> Result<()> {
     let mut stopped = false;
 
     while !stopped {
-        if let Ok(message) = gps.rx.try_recv() {
-            match message {
-                Message::Curr(data) => {
-                    execute!(
-                        stdout,
-                        MoveTo(23, 2),
-                        Clear(ClearType::UntilNewLine),
-                        Print(format!("{}", data))
-                    )?;
-                }
-                Message::DevCurr(data) => {
-                    execute!(
-                        stdout,
-                        MoveTo(23, 3),
-                        Clear(ClearType::UntilNewLine),
-                        Print(format!("{} Hz", data))
-                    )?;
-                }
-                Message::DevAccum(data) => {
-                    execute!(
-                        stdout,
-                        MoveTo(23, 4),
-                        Clear(ClearType::UntilNewLine),
-                        Print(format!("{} Hz", data))
-                    )?;
-                }
-                Message::DAC1(data) => {
-                    execute!(
-                        stdout,
-                        MoveTo(23, 5),
-                        Clear(ClearType::UntilNewLine),
-                        Print(format!("{}", data))
-                    )?;
-                }
-                Message::DAC2(data) => {
-                    execute!(
-                        stdout,
-                        MoveTo(23, 6),
-                        Clear(ClearType::UntilNewLine),
-                        Print(format!("{}", data))
-                    )?;
-                }
-                Message::Deviation(data) => {
-                    execute!(
-                        stdout,
-                        MoveTo(23, 7),
-                        Clear(ClearType::UntilNewLine),
-                        Print(format!("{} ppb", data))
-                    )?;
-                }
-                Message::SerialError(_) => {
-                    stopped = true;
-                }
-            }
+        let message = gps.rx.try_recv()?;
+        match process_message(&message) {
+            Ok(_) => {}
+            Err(_) => stopped = true,
         }
     }
 
     execute!(stdout, Show, LeaveAlternateScreen)?;
+
+    Ok(())
+}
+
+pub fn process_message(message: &Message) -> Result<()> {
+    let mut stdout = stdout();
+
+    match message {
+        Message::Curr(data) => {
+            execute!(
+                stdout,
+                MoveTo(23, 2),
+                Clear(ClearType::UntilNewLine),
+                Print(format!("{}", data))
+            )?;
+        }
+        Message::DevCurr(data) => {
+            execute!(
+                stdout,
+                MoveTo(23, 3),
+                Clear(ClearType::UntilNewLine),
+                Print(format!("{} Hz", data))
+            )?;
+        }
+        Message::DevAccum(data) => {
+            execute!(
+                stdout,
+                MoveTo(23, 4),
+                Clear(ClearType::UntilNewLine),
+                Print(format!("{} Hz", data))
+            )?;
+        }
+        Message::DAC1(data) => {
+            execute!(
+                stdout,
+                MoveTo(23, 5),
+                Clear(ClearType::UntilNewLine),
+                Print(format!("{}", data))
+            )?;
+        }
+        Message::DAC2(data) => {
+            execute!(
+                stdout,
+                MoveTo(23, 6),
+                Clear(ClearType::UntilNewLine),
+                Print(format!("{}", data))
+            )?;
+        }
+        Message::Deviation(data) => {
+            execute!(
+                stdout,
+                MoveTo(23, 7),
+                Clear(ClearType::UntilNewLine),
+                Print(format!("{} ppb", data))
+            )?;
+        }
+        Message::SerialError(e) => {
+            return Err(anyhow!(e.clone()));
+        }
+    }
 
     Ok(())
 }
