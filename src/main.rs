@@ -33,17 +33,25 @@ async fn main() -> Result<()> {
     let gps = Gps::new(args.device().to_string());
 
     let mut stopped = false;
+    let mut err_str = String::default();
 
     while !stopped {
         if let Ok(message) = gps.rx.try_recv() {
             match process_message(&message) {
                 Ok(_) => {}
-                Err(_) => stopped = true,
+                Err(e) => {
+                    stopped = true;
+                    err_str = e.to_string();
+                }
             }
         }
     }
 
     execute!(stdout, Show, LeaveAlternateScreen)?;
+
+    if !err_str.is_empty() {
+        println!("{}", err_str);
+    }
 
     Ok(())
 }
