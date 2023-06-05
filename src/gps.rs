@@ -73,7 +73,7 @@ impl Gps {
                             if let Ok(data) = data.parse() {
                                 line_tx.send(Message::DAC2(data)).unwrap();
                             }
-                        } else if line.starts_with("*") {
+                        } else if line.starts_with('*') {
                             let (_, data) = line.split_once(' ').unwrap();
                             let data = data.strip_suffix(" ppb").unwrap();
 
