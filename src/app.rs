@@ -16,8 +16,8 @@ pub struct App {
     current: u64,
     devcurr: f64,
     devaccum: f64,
-    dac1: u32,
-    dac2: u32,
+    dac1: Option<u32>,
+    dac2: Option<u32>,
     deviation: f32,
 }
 
@@ -28,8 +28,8 @@ impl App {
             current: 0,
             devcurr: 0.0,
             devaccum: 0.0,
-            dac1: 0,
-            dac2: 0,
+            dac1: None,
+            dac2: None,
             deviation: 0.0,
         }
     }
@@ -77,10 +77,10 @@ impl App {
                 self.devaccum = *data;
             }
             Message::DAC1(data) => {
-                self.dac1 = *data;
+                self.dac1 = Some(*data);
             }
             Message::DAC2(data) => {
-                self.dac2 = *data;
+                self.dac2 = Some(*data);
             }
             Message::Deviation(data) => {
                 self.deviation = *data;
@@ -94,6 +94,15 @@ impl App {
     }
 
     fn generate_data_list(&self) -> Vec<Row> {
+        let dac1 = match self.dac1 {
+            Some(dac1) => dac1.to_string(),
+            None => "".to_string(),
+        };
+        let dac2 = match self.dac2 {
+            Some(dac2) => dac2.to_string(),
+            None => "".to_string(),
+        };
+
         vec![
             Row::new(vec![
                 Cell::from("Current"),
@@ -107,8 +116,8 @@ impl App {
                 Cell::from("Deviation accumulated"),
                 Cell::from(format!("{}Hz", self.devaccum)),
             ]),
-            Row::new(vec![Cell::from("DAC1"), Cell::from(self.dac1.to_string())]),
-            Row::new(vec![Cell::from("DAC2"), Cell::from(self.dac2.to_string())]),
+            Row::new(vec![Cell::from("DAC1"), Cell::from(dac1)]),
+            Row::new(vec![Cell::from("DAC2"), Cell::from(dac2)]),
             Row::new(vec![
                 Cell::from("Deviation"),
                 Cell::from(format!("{}ppb", self.deviation)),
