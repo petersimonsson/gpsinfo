@@ -9,6 +9,7 @@ authors = ["Peter Simonsson <peter.simonsson@gmail.com>"]
 
 [dependencies]
 anyhow = "1.0.71"
+chrono = "0.4.26"
 clap = { version = "4.3.0", features = ["derive"] }
 crossbeam = { version = "0.8.2", features = ["crossbeam-channel"] }
 crossterm = "0.26.1"
