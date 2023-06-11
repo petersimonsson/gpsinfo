@@ -17,8 +17,8 @@ use crate::gps::{Gps, Message};
 pub struct App {
     gps: Gps,
     current: Vec<(f64, f64)>,
-    devcurr: f64,
-    devaccum: f64,
+    devcurr: Vec<(f64, f64)>,
+    devaccum: Vec<(f64, f64)>,
     dac1: Option<u32>,
     dac2: Option<u32>,
     deviation: f32,
@@ -29,8 +29,8 @@ impl App {
         App {
             gps: Gps::new(device.to_string()),
             current: Vec::new(),
-            devcurr: 0.0,
-            devaccum: 0.0,
+            devcurr: Vec::new(),
+            devaccum: Vec::new(),
             dac1: None,
             dac2: None,
             deviation: 0.0,
@@ -61,7 +61,8 @@ impl App {
                 [
                     Constraint::Percentage(20),
                     Constraint::Percentage(20),
-                    Constraint::Percentage(20),
+                    Constraint::Percentage(30),
+                    Constraint::Percentage(30),
                 ]
                 .as_ref(),
             )
@@ -75,6 +76,7 @@ impl App {
         f.render_widget(table, chunks[0]);
 
         let now = Local::now().timestamp() as f64;
+        let beginning = now - 300.0;
 
         let datasets = vec![Dataset::default()
             .marker(symbols::Marker::Braille)
@@ -83,10 +85,34 @@ impl App {
 
         let chart = Chart::new(datasets)
             .block(Block::default().title("Current").borders(Borders::ALL))
-            .x_axis(Axis::default().bounds([now - 300.0, now]))
+            .x_axis(Axis::default().bounds([beginning, now]))
             .y_axis(Axis::default().bounds([79999995.0, 80000005.0]));
 
         f.render_widget(chart, chunks[1]);
+
+        let datasets = vec![
+            Dataset::default()
+                .name("Current")
+                .marker(symbols::Marker::Braille)
+                .style(Style::default().fg(Color::Cyan))
+                .data(&self.devcurr),
+            Dataset::default()
+                .name("Accumulated")
+                .marker(symbols::Marker::Braille)
+                .style(Style::default().fg(Color::Red))
+                .data(&self.devaccum),
+        ];
+
+        let chart = Chart::new(datasets)
+            .block(
+                Block::default()
+                    .title("Deviation(Hz)")
+                    .borders(Borders::ALL),
+            )
+            .x_axis(Axis::default().bounds([beginning, now]))
+            .y_axis(Axis::default().bounds([-1.0, 2.0]));
+
+        f.render_widget(chart, chunks[2]);
     }
 
     fn process_message(&mut self, message: &Message) -> Result<()> {
@@ -100,10 +126,18 @@ impl App {
                 }
             }
             Message::DevCurr(data) => {
-                self.devcurr = *data;
+                self.devcurr.push((Local::now().timestamp() as f64, *data));
+
+                if self.devcurr.len() > 300 {
+                    self.devcurr.remove(0);
+                }
             }
             Message::DevAccum(data) => {
-                self.devaccum = *data;
+                self.devaccum.push((Local::now().timestamp() as f64, *data));
+
+                if self.devaccum.len() > 300 {
+                    self.devaccum.remove(0);
+                }
             }
             Message::DAC1(data) => {
                 self.dac1 = Some(*data);
@@ -127,6 +161,14 @@ impl App {
             Some(data) => data.1.to_string(),
             None => "".to_string(),
         };
+        let devcurr = match self.devcurr.last() {
+            Some(data) => data.1.to_string(),
+            None => "".to_string(),
+        };
+        let devaccum = match self.devaccum.last() {
+            Some(data) => data.1.to_string(),
+            None => "".to_string(),
+        };
         let dac1 = match self.dac1 {
             Some(dac1) => dac1.to_string(),
             None => "".to_string(),
@@ -140,11 +182,11 @@ impl App {
             Row::new(vec![Cell::from("Current"), Cell::from(current)]),
             Row::new(vec![
                 Cell::from("Deviation current"),
-                Cell::from(format!("{}Hz", self.devcurr)),
+                Cell::from(format!("{}Hz", devcurr)),
             ]),
             Row::new(vec![
                 Cell::from("Deviation accumulated"),
-                Cell::from(format!("{}Hz", self.devaccum)),
+                Cell::from(format!("{}Hz", devaccum)),
             ]),
             Row::new(vec![Cell::from("DAC1"), Cell::from(dac1)]),
             Row::new(vec![Cell::from("DAC2"), Cell::from(dac2)]),
