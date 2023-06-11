@@ -57,7 +57,14 @@ impl App {
     fn ui<B: Backend>(&self, f: &mut Frame<B>) {
         let chunks = Layout::default()
             .direction(Direction::Vertical)
-            .constraints([Constraint::Percentage(20), Constraint::Percentage(20)].as_ref())
+            .constraints(
+                [
+                    Constraint::Percentage(20),
+                    Constraint::Percentage(20),
+                    Constraint::Percentage(20),
+                ]
+                .as_ref(),
+            )
             .split(f.size());
 
         let list = self.generate_data_list();
