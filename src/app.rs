@@ -8,7 +8,7 @@ use tui::{
     layout::{Constraint, Direction, Layout},
     style::{Color, Style},
     symbols,
-    widgets::{Axis, Block, Borders, Cell, Chart, Dataset, Row, Table},
+    widgets::{Axis, Block, Borders, Cell, Chart, Dataset, GraphType, Row, Table},
     Frame, Terminal,
 };
 
@@ -21,7 +21,7 @@ pub struct App {
     devaccum: Vec<(f64, f64)>,
     dac1: Option<u32>,
     dac2: Option<u32>,
-    deviation: f32,
+    deviation: Vec<(f64, f64)>,
 }
 
 impl App {
@@ -33,7 +33,7 @@ impl App {
             devaccum: Vec::new(),
             dac1: None,
             dac2: None,
-            deviation: 0.0,
+            deviation: Vec::new(),
         }
     }
 
@@ -113,6 +113,23 @@ impl App {
             .y_axis(Axis::default().bounds([-1.0, 2.0]));
 
         f.render_widget(chart, chunks[2]);
+
+        let datasets = vec![Dataset::default()
+            .marker(symbols::Marker::Braille)
+            .graph_type(GraphType::Line)
+            .style(Style::default().fg(Color::Cyan))
+            .data(&self.deviation)];
+
+        let chart = Chart::new(datasets)
+            .block(
+                Block::default()
+                    .title("Deviation(ppb)")
+                    .borders(Borders::ALL),
+            )
+            .x_axis(Axis::default().bounds([beginning, now]))
+            .y_axis(Axis::default().bounds([0.0, 2.0]));
+
+        f.render_widget(chart, chunks[3]);
     }
 
     fn process_message(&mut self, message: &Message) -> Result<()> {
@@ -146,7 +163,12 @@ impl App {
                 self.dac2 = Some(*data);
             }
             Message::Deviation(data) => {
-                self.deviation = *data;
+                self.deviation
+                    .push((Local::now().timestamp() as f64, *data));
+
+                if self.deviation.len() > 300 {
+                    self.deviation.remove(0);
+                }
             }
             Message::SerialError(e) => {
                 return Err(anyhow!(e.clone()));
@@ -177,6 +199,10 @@ impl App {
             Some(dac2) => dac2.to_string(),
             None => "".to_string(),
         };
+        let deviation = match self.deviation.last() {
+            Some(data) => data.1.to_string(),
+            None => "".to_string(),
+        };
 
         vec![
             Row::new(vec![Cell::from("Current"), Cell::from(current)]),
@@ -192,7 +218,7 @@ impl App {
             Row::new(vec![Cell::from("DAC2"), Cell::from(dac2)]),
             Row::new(vec![
                 Cell::from("Deviation"),
-                Cell::from(format!("{}ppb", self.deviation)),
+                Cell::from(format!("{}ppb", deviation)),
             ]),
         ]
     }

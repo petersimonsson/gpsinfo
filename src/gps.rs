@@ -7,7 +7,7 @@ pub enum Message {
     Curr(u64),
     DevCurr(f64),
     DevAccum(f64),
-    Deviation(f32),
+    Deviation(f64),
     DAC1(u32),
     DAC2(u32),
     SerialError(String),
