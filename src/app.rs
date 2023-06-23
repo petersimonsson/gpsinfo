@@ -80,6 +80,7 @@ impl App {
 
         let datasets = vec![Dataset::default()
             .marker(symbols::Marker::Braille)
+            .graph_type(GraphType::Line)
             .style(Style::default().fg(Color::Cyan))
             .data(&self.current)];
 
@@ -94,11 +95,13 @@ impl App {
             Dataset::default()
                 .name("Current")
                 .marker(symbols::Marker::Braille)
+                .graph_type(GraphType::Line)
                 .style(Style::default().fg(Color::Cyan))
                 .data(&self.devcurr),
             Dataset::default()
                 .name("Accumulated")
                 .marker(symbols::Marker::Braille)
+                .graph_type(GraphType::Line)
                 .style(Style::default().fg(Color::Red))
                 .data(&self.devaccum),
         ];
