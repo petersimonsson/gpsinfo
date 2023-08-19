@@ -14,6 +14,7 @@ use std::io::{stdout, Stdout};
 
 use crate::app::App;
 use crate::args::Args;
+use crate::gps::Gps;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -21,8 +22,9 @@ async fn main() -> Result<()> {
 
     let mut terminal = setup_terminal()?;
 
-    let mut app = App::new(args.device());
-    let res = app.run(&mut terminal);
+    let gps = Gps::new(args.device().to_string());
+    let mut app = App::new();
+    let res = app.run(&mut terminal, gps.rx);
 
     restore_terminal(&mut terminal)?;
 

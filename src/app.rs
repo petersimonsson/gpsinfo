@@ -2,6 +2,7 @@ use std::{io::Stdout, time::Duration};
 
 use anyhow::{anyhow, Result};
 use chrono::Local;
+use crossbeam::channel::Receiver;
 use crossterm::event::{self, Event, KeyCode};
 use ratatui::{
     backend::CrosstermBackend,
@@ -12,10 +13,9 @@ use ratatui::{
     Frame, Terminal,
 };
 
-use crate::gps::{Gps, Message};
+use crate::gps::Message;
 
 pub struct App {
-    gps: Gps,
     current: Vec<(f64, f64)>,
     devcurr: Vec<(f64, f64)>,
     devaccum: Vec<(f64, f64)>,
@@ -25,9 +25,8 @@ pub struct App {
 }
 
 impl App {
-    pub fn new(device: &str) -> Self {
+    pub fn new() -> Self {
         App {
-            gps: Gps::new(device.to_string()),
             current: Vec::new(),
             devcurr: Vec::new(),
             devaccum: Vec::new(),
@@ -37,18 +36,23 @@ impl App {
         }
     }
 
-    pub fn run(&mut self, terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result<()> {
+    pub fn run(
+        &mut self,
+        terminal: &mut Terminal<CrosstermBackend<Stdout>>,
+        data_channel: Receiver<Message>,
+    ) -> Result<()> {
         loop {
             terminal.draw(|f| self.ui(f))?;
 
-            if let Ok(true) = event::poll(Duration::from_secs(0)) {
+            if let Ok(true) = event::poll(Duration::from_millis(250)) {
                 if let Event::Key(key) = event::read()? {
                     if let KeyCode::Char('q') = key.code {
                         return Ok(());
                     }
                 }
             }
-            if let Ok(message) = self.gps.rx.try_recv() {
+
+            for message in data_channel.try_iter() {
                 self.process_message(&message)?;
             }
         }
