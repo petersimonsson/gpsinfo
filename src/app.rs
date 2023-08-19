@@ -7,7 +7,7 @@ use crossterm::event::{self, Event, KeyCode};
 use ratatui::{
     backend::CrosstermBackend,
     layout::{Constraint, Direction, Layout},
-    style::{Color, Style},
+    style::{Color, Style, Stylize},
     symbols,
     widgets::{Axis, Block, Borders, Cell, Chart, Dataset, GraphType, Row, Table},
     Frame, Terminal,
@@ -63,10 +63,10 @@ impl App {
             .direction(Direction::Vertical)
             .constraints(
                 [
+                    Constraint::Length(8),
                     Constraint::Percentage(20),
-                    Constraint::Percentage(20),
-                    Constraint::Percentage(30),
-                    Constraint::Percentage(30),
+                    Constraint::Percentage(35),
+                    Constraint::Percentage(35),
                 ]
                 .as_ref(),
             )
@@ -74,7 +74,7 @@ impl App {
 
         let list = self.generate_data_list();
         let table = Table::new(list)
-            .widths(&[Constraint::Percentage(50), Constraint::Percentage(50)])
+            .widths(&[Constraint::Length(21), Constraint::Length(15)])
             .block(Block::default().title("GPSDXO Data").borders(Borders::ALL));
 
         f.render_widget(table, chunks[0]);
@@ -212,19 +212,19 @@ impl App {
         };
 
         vec![
-            Row::new(vec![Cell::from("Current"), Cell::from(current)]),
+            Row::new(vec![Cell::from("Current".bold()), Cell::from(current)]),
             Row::new(vec![
-                Cell::from("Deviation current"),
+                Cell::from("Deviation current".bold()),
                 Cell::from(format!("{}Hz", devcurr)),
             ]),
             Row::new(vec![
-                Cell::from("Deviation accumulated"),
+                Cell::from("Deviation accumulated".bold()),
                 Cell::from(format!("{}Hz", devaccum)),
             ]),
-            Row::new(vec![Cell::from("DAC1"), Cell::from(dac1)]),
-            Row::new(vec![Cell::from("DAC2"), Cell::from(dac2)]),
+            Row::new(vec![Cell::from("DAC1".bold()), Cell::from(dac1)]),
+            Row::new(vec![Cell::from("DAC2".bold()), Cell::from(dac2)]),
             Row::new(vec![
-                Cell::from("Deviation"),
+                Cell::from("Deviation".bold()),
                 Cell::from(format!("{}ppb", deviation)),
             ]),
         ]
