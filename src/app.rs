@@ -1,10 +1,10 @@
-use std::time::Duration;
+use std::{io::Stdout, time::Duration};
 
 use anyhow::{anyhow, Result};
 use chrono::Local;
 use crossterm::event::{self, Event, KeyCode};
 use ratatui::{
-    backend::Backend,
+    backend::CrosstermBackend,
     layout::{Constraint, Direction, Layout},
     style::{Color, Style},
     symbols,
@@ -37,7 +37,7 @@ impl App {
         }
     }
 
-    pub fn run<B: Backend>(&mut self, terminal: &mut Terminal<B>) -> Result<()> {
+    pub fn run(&mut self, terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result<()> {
         loop {
             terminal.draw(|f| self.ui(f))?;
 
@@ -54,7 +54,7 @@ impl App {
         }
     }
 
-    fn ui<B: Backend>(&self, f: &mut Frame<B>) {
+    fn ui(&self, f: &mut Frame<CrosstermBackend<Stdout>>) {
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints(
