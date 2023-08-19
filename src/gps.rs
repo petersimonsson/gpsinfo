@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crossbeam::channel::{self, Receiver, Sender};
 use futures::StreamExt;
 use tokio_serial::SerialPortBuilderExt;
@@ -10,7 +12,7 @@ pub enum Message {
     Deviation(f64),
     DAC1(u32),
     DAC2(u32),
-    SerialError(String),
+    SerialError(Arc<str>),
 }
 
 pub struct Gps {
@@ -27,12 +29,16 @@ impl Gps {
             let mut port = match tokio_serial::new(device, 115200).open_native_async() {
                 Ok(port) => port,
                 Err(e) => {
-                    line_tx.send(Message::SerialError(e.to_string())).unwrap();
+                    line_tx
+                        .send(Message::SerialError(e.to_string().into()))
+                        .unwrap();
                     return;
                 }
             };
             if let Err(e) = port.set_exclusive(false) {
-                line_tx.send(Message::SerialError(e.to_string())).unwrap();
+                line_tx
+                    .send(Message::SerialError(e.to_string().into()))
+                    .unwrap();
             }
 
             let codec = LinesCodec::new();
@@ -82,7 +88,9 @@ impl Gps {
                             }
                         }
                     }
-                    Some(Err(e)) => line_tx.send(Message::SerialError(e.to_string())).unwrap(),
+                    Some(Err(e)) => line_tx
+                        .send(Message::SerialError(e.to_string().into()))
+                        .unwrap(),
                     None => {}
                 }
             }
