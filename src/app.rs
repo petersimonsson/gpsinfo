@@ -3,7 +3,7 @@ use std::time::Duration;
 use anyhow::{anyhow, Result};
 use chrono::Local;
 use crossterm::event::{self, Event, KeyCode};
-use tui::{
+use ratatui::{
     backend::Backend,
     layout::{Constraint, Direction, Layout},
     style::{Color, Style},
