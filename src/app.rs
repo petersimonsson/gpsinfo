@@ -13,7 +13,7 @@ use ratatui::{
     Frame, Terminal,
 };
 
-use crate::gps::Message;
+use crate::{cartain_codec::CartainMessage, gps::Message};
 
 pub struct App {
     current: Vec<(f64, f64)>,
@@ -141,42 +141,44 @@ impl App {
 
     fn process_message(&mut self, message: &Message) -> Result<()> {
         match message {
-            Message::Curr(data) => {
-                self.current
-                    .push((Local::now().timestamp() as f64, *data as f64));
+            Message::Data(message) => match message {
+                CartainMessage::Curr(data) => {
+                    self.current
+                        .push((Local::now().timestamp() as f64, *data as f64));
 
-                if self.current.len() > 300 {
-                    self.current.remove(0);
+                    if self.current.len() > 300 {
+                        self.current.remove(0);
+                    }
                 }
-            }
-            Message::DevCurr(data) => {
-                self.devcurr.push((Local::now().timestamp() as f64, *data));
+                CartainMessage::DevCurr(data) => {
+                    self.devcurr.push((Local::now().timestamp() as f64, *data));
 
-                if self.devcurr.len() > 300 {
-                    self.devcurr.remove(0);
+                    if self.devcurr.len() > 300 {
+                        self.devcurr.remove(0);
+                    }
                 }
-            }
-            Message::DevAccum(data) => {
-                self.devaccum.push((Local::now().timestamp() as f64, *data));
+                CartainMessage::DevAccum(data) => {
+                    self.devaccum.push((Local::now().timestamp() as f64, *data));
 
-                if self.devaccum.len() > 300 {
-                    self.devaccum.remove(0);
+                    if self.devaccum.len() > 300 {
+                        self.devaccum.remove(0);
+                    }
                 }
-            }
-            Message::DAC1(data) => {
-                self.dac1 = Some(*data);
-            }
-            Message::DAC2(data) => {
-                self.dac2 = Some(*data);
-            }
-            Message::Deviation(data) => {
-                self.deviation
-                    .push((Local::now().timestamp() as f64, *data));
+                CartainMessage::DAC1(data) => {
+                    self.dac1 = Some(*data);
+                }
+                CartainMessage::DAC2(data) => {
+                    self.dac2 = Some(*data);
+                }
+                CartainMessage::Deviation(data) => {
+                    self.deviation
+                        .push((Local::now().timestamp() as f64, *data));
 
-                if self.deviation.len() > 300 {
-                    self.deviation.remove(0);
+                    if self.deviation.len() > 300 {
+                        self.deviation.remove(0);
+                    }
                 }
-            }
+            },
             Message::SerialError(e) => {
                 return Err(anyhow!(e.clone()));
             }

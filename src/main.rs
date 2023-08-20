@@ -1,5 +1,6 @@
 mod app;
 mod args;
+mod cartain_codec;
 mod gps;
 
 use anyhow::Result;

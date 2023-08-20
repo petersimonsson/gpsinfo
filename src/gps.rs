@@ -3,15 +3,12 @@ use std::sync::Arc;
 use crossbeam::channel::{self, Receiver, Sender};
 use futures::StreamExt;
 use tokio_serial::SerialPortBuilderExt;
-use tokio_util::codec::{Decoder, LinesCodec};
+use tokio_util::codec::Decoder;
+
+use crate::cartain_codec::{CartainCodec, CartainMessage};
 
 pub enum Message {
-    Curr(u64),
-    DevCurr(f64),
-    DevAccum(f64),
-    Deviation(f64),
-    DAC1(u32),
-    DAC2(u32),
+    Data(CartainMessage),
     SerialError(Arc<str>),
 }
 
@@ -41,52 +38,13 @@ impl Gps {
                     .unwrap();
             }
 
-            let codec = LinesCodec::new();
+            let codec = CartainCodec::new();
             let mut reader = codec.framed(port);
 
             loop {
                 match reader.next().await {
-                    Some(Ok(line)) => {
-                        if line.starts_with("# Curr:") {
-                            let (_, data) = line.rsplit_once(' ').unwrap();
-
-                            if let Ok(data) = data.parse() {
-                                line_tx.send(Message::Curr(data)).unwrap();
-                            }
-                        } else if line.starts_with("# Deviation current:") {
-                            let (_, data) = line.rsplit_once(' ').unwrap();
-                            let data = data.strip_suffix("Hz").unwrap();
-
-                            if let Ok(data) = data.parse() {
-                                line_tx.send(Message::DevCurr(data)).unwrap();
-                            }
-                        } else if line.starts_with("# Deviation accum:") {
-                            let (_, data) = line.rsplit_once(' ').unwrap();
-                            let data = data.strip_suffix("Hz").unwrap();
-
-                            if let Ok(data) = data.parse() {
-                                line_tx.send(Message::DevAccum(data)).unwrap();
-                            }
-                        } else if line.starts_with("# New DAC1 value") {
-                            let (_, data) = line.rsplit_once(' ').unwrap();
-
-                            if let Ok(data) = data.parse() {
-                                line_tx.send(Message::DAC1(data)).unwrap();
-                            }
-                        } else if line.starts_with("# New DAC2 value") {
-                            let (_, data) = line.rsplit_once(' ').unwrap();
-
-                            if let Ok(data) = data.parse() {
-                                line_tx.send(Message::DAC2(data)).unwrap();
-                            }
-                        } else if line.starts_with('*') {
-                            let (_, data) = line.split_once(' ').unwrap();
-                            let data = data.strip_suffix(" ppb").unwrap();
-
-                            if let Ok(data) = data.parse() {
-                                line_tx.send(Message::Deviation(data)).unwrap();
-                            }
-                        }
+                    Some(Ok(message)) => {
+                        line_tx.send(Message::Data(message)).unwrap();
                     }
                     Some(Err(e)) => line_tx
                         .send(Message::SerialError(e.to_string().into()))
