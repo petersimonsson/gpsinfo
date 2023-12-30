@@ -58,7 +58,7 @@ impl App {
         }
     }
 
-    fn ui(&self, f: &mut Frame<CrosstermBackend<Stdout>>) {
+    fn ui(&self, f: &mut Frame) {
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints(
@@ -73,8 +73,7 @@ impl App {
             .split(f.size());
 
         let list = self.generate_data_list();
-        let table = Table::new(list)
-            .widths(&[Constraint::Length(21), Constraint::Length(15)])
+        let table = Table::new(list, &[Constraint::Length(21), Constraint::Length(15)])
             .block(Block::default().title("GPSDXO Data").borders(Borders::ALL));
 
         f.render_widget(table, chunks[0]);
