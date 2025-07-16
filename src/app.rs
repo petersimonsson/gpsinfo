@@ -70,7 +70,7 @@ impl App {
                 ]
                 .as_ref(),
             )
-            .split(f.size());
+            .split(f.area());
 
         let list = self.generate_data_list();
         let table = Table::new(list, &[Constraint::Length(21), Constraint::Length(15)])
