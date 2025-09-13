@@ -16,6 +16,6 @@ crossbeam = { version = "0.8", features = ["crossbeam-channel"] }
 crossterm = "0.29"
 futures = "0.3"
 ratatui = "0.29"
-tokio = { version = "1.46", features = ["macros", "rt-multi-thread"] }
+tokio = { version = "1.47", features = ["macros", "rt-multi-thread"] }
 tokio-serial = "5.4"
 tokio-util = { version = "0.7", features = ["codec"] }

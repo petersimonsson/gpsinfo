@@ -186,7 +186,7 @@ impl App {
         Ok(())
     }
 
-    fn generate_data_list(&self) -> Vec<Row> {
+    fn generate_data_list(&self) -> Vec<Row<'_>> {
         let current = match self.current.last() {
             Some(data) => data.1.to_string(),
             None => "".to_string(),
