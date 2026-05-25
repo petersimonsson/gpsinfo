@@ -11,11 +11,11 @@ authors = ["Peter Simonsson <peter.simonsson@gmail.com>"]
 anyhow = "1.0"
 bytes = "1.11"
 chrono = "0.4"
-clap = { version = "4.5", features = ["derive"] }
+clap = { version = "4.6", features = ["derive"] }
 crossbeam = { version = "0.8", features = ["crossbeam-channel"] }
 crossterm = "0.29"
 futures = "0.3"
 ratatui = "0.30"
-tokio = { version = "1.49", features = ["macros", "rt-multi-thread"] }
+tokio = { version = "1.52", features = ["macros", "rt-multi-thread"] }
 tokio-serial = "5.4"
 tokio-util = { version = "0.7", features = ["codec"] }
